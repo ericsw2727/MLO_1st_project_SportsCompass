@@ -8,11 +8,8 @@ from .forms import CommentForm, PasswordConfirmForm, PostEditForm, PostForm
 from .models import Post
 
 
-def job_postings(request):
-    return render(request, 'community/coming_soon.html', {
-        'page_title': '일자리 공고',
-        'page_description': '일자리 공고 서비스는 준비 중입니다.',
-    })
+def community_home(request):
+    return render(request, 'community/home.html')
 
 
 def mentoring(request):

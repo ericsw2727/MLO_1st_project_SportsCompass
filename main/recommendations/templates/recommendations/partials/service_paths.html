@@ -1,3 +1,4 @@
+{% load static %}
 <section class="recommend-split" id="recommend-split" aria-labelledby="split-title">
   <h2 id="split-title" class="sr-only">추천 시작하기</h2>
   <a class="recommend-panel recommend-panel-blue" data-iris-target="unlicensed" href="{% url 'recommendations:unlicensed_recommendation_form' %}">
@@ -12,7 +13,7 @@
         <strong>자격증 추천 시작하기</strong>
       </div>
     </div>
-    <span class="panel-index">01</span>
+    
     <div>
       <h3>자격증을<br>찾고 있나요?</h3>
       <p>관심 종목과 지역을 바탕으로 활용 가능한 자격 방향을 추천합니다.</p>
@@ -31,7 +32,7 @@
         <strong>활동 기관 찾아보기</strong>
       </div>
     </div>
-    <span class="panel-index">02</span>
+    
     <div>
       <h3>활동할 기관을<br>찾고 있나요?</h3>
       <p>보유 자격을 활용할 수 있는 기관과 프로그램을 연결합니다.</p>
@@ -44,21 +45,23 @@
   <iframe class="iris-layer-frame" data-iris-cover-frame src="about:blank" data-src="{% url 'recommendations:unlicensed_recommendation_form' %}" tabindex="-1"></iframe>
   <div class="iris-layer-scrim"></div>
   <div class="iris-layer-brand">
-    <span class="iris-layer-mark-wrap">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="iris-layer-spinner" aria-hidden="true"></span>
-    </span>
-    <span class="brand-text"><strong>스포츠 커리어 나침반</strong><small>SPORTS CREATES NEXT CAREERS</small></span>
+    <div class="iris-layer-brand-row">
+      <span class="iris-layer-mark-wrap">
+        <span class="iris-layer-logo-wrap"><img class="iris-layer-logo" src="{% static 'analytics/images/nachim-logo.png' %}?v=2" alt="나침"></span>
+        <span class="iris-layer-progress" aria-hidden="true"><span class="iris-layer-progress-fill"></span></span>
+      </span>
+    </div>
   </div>
 </div>
 <div class="iris-layer iris-layer-yellow" data-iris-layer="licensed" aria-hidden="true">
   <iframe class="iris-layer-frame" data-iris-cover-frame src="about:blank" data-src="{% url 'recommendations:licensed_recommendation_form' %}" tabindex="-1"></iframe>
   <div class="iris-layer-scrim"></div>
   <div class="iris-layer-brand">
-    <span class="iris-layer-mark-wrap">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <span class="iris-layer-spinner" aria-hidden="true"></span>
-    </span>
-    <span class="brand-text"><strong>스포츠 커리어 나침반</strong><small>SPORTS CREATES NEXT CAREERS</small></span>
+    <div class="iris-layer-brand-row">
+      <span class="iris-layer-mark-wrap">
+        <span class="iris-layer-logo-wrap"><img class="iris-layer-logo" src="{% static 'analytics/images/nachim-logo.png' %}?v=2" alt="나침"></span>
+        <span class="iris-layer-progress" aria-hidden="true"><span class="iris-layer-progress-fill"></span></span>
+      </span>
+    </div>
   </div>
 </div>

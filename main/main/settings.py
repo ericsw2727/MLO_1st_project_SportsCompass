@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 
 from django.contrib.messages import constants as message_constants
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,13 +25,25 @@ load_dotenv(BASE_DIR / '.env')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-y0i9wg+(ix0fd4bkmx&d7-mm2az=)f68fb2oc&n&1q$_70*ym6'
+IS_RENDER = os.environ.get('RENDER') is not None
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if IS_RENDER:
+        raise ImproperlyConfigured('Render 환경 변수 SECRET_KEY를 설정해야 합니다.')
+    SECRET_KEY = 'django-insecure-local-development-key'
 
-ALLOWED_HOSTS = []
+DEBUG = not IS_RENDER
+
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+CSRF_TRUSTED_ORIGINS = []
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
 
 
 # Application definition
@@ -45,11 +58,13 @@ INSTALLED_APPS = [
     'analytics',
     'recommendations',
     'substitutes',
+    'jobs',
     'community',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -93,10 +108,13 @@ DATABASES = {
         'PASSWORD': os.environ.get('COMMUNITY_DB_PASSWORD', ''),
         'HOST': os.environ.get('COMMUNITY_DB_HOST', '127.0.0.1'),
         'PORT': os.environ.get('COMMUNITY_DB_PORT', '5432'),
+        # 이 DB가 응답하지 않아도(예: 워크넷 연계 공고 조회) 요청이 오래 멈춰있지 않도록 연결 자체에 제한을 둔다.
+        'OPTIONS': {'connect_timeout': 5},
     },
 }
 
 DATABASE_ROUTERS = [
+    'main.db_routers.Work24Router',
     'main.db_routers.CommunityRouter',
 ]
 
@@ -145,10 +163,27 @@ USE_TZ = True
 # 선행 슬래시가 없으면 /recommendations/ 같은 하위 URL에서
 # /recommendations/static/... 으로 해석되어 정적 파일이 404가 된다.
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'analytics' / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-MEDIA_URL = 'media/'
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Render는 외부 HTTPS 요청을 프록시를 통해 Django로 전달한다.
+# 운영 환경에서 HTTPS 리다이렉트와 보안 쿠키를 적용하되 로컬 개발에는 영향을 주지 않는다.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # 업로드 파일은 미리보기/검증 동안에만 임시 보관하고 저장 완료 후 삭제한다.
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
@@ -164,12 +199,19 @@ PROGRAM_CLEANUP_REFERENCE_DATE = '2026-07-31'
 # 플랫폼 설정에 등록해야 지도가 표시된다. 환경 변수로 주입하는 것을 권장한다.
 KAKAO_MAP_APP_KEY = os.environ.get('KAKAO_MAP_APP_KEY', '')
 
+# 시험정보 페이지 "AI 추천 교재" 패널이 사용하는 Gemini API 키/모델.
+# https://aistudio.google.com 에서 발급받아 환경 변수로 주입한다. 키가 없으면
+# 패널은 에러 상태를 보여줄 뿐 나머지 페이지 렌더링에는 영향을 주지 않는다.
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.6-flash')
+
 
 # Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
-
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# 로컬에서는 실제 발송 대신 터미널에 내용을 출력한다.
+# 운영 환경에서는 Django의 기본 SMTP 메일러 설정을 사용한다.
+if DEBUG:
+    MAILERS = {
+        'default': {
+            'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+        },
+    }

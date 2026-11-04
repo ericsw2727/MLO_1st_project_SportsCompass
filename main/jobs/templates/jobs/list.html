@@ -1,0 +1,44 @@
+{% extends 'analytics/base.html' %}
+{% block title %}일자리 공고 | 스포츠 커리어 나침반{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h1 class="h3 mb-1">일자리 공고</h1>
+  <p class="text-secondary mb-0">고용24에서 수집한 스포츠·레크리에이션 채용공고를 확인합니다.</p>
+</div>
+
+<form method="get" class="card border-0 shadow-sm mb-4"><div class="card-body">
+  <div class="row g-3 align-items-end">
+    <div class="col-md-7"><label class="form-label">키워드 검색</label><input type="text" name="q" class="form-control" placeholder="공고 제목 또는 기관명" value="{{ current.q }}"></div>
+    <div class="col-md-3"><label class="form-label">지역</label><input type="text" name="region" class="form-control" placeholder="예: 서울" value="{{ current.region }}"></div>
+    <div class="col-md-2 d-flex gap-2"><button class="btn btn-primary flex-fill">검색</button><a class="btn btn-outline-secondary" href="{% url 'jobs:job_list' %}">초기화</a></div>
+  </div>
+</div></form>
+
+<div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+  <h2 class="h5 mb-0">고용24 연계 공고</h2>
+  <span class="badge text-bg-light">총 {{ page_obj.paginator.count }}건</span>
+  <span class="text-secondary small">클릭하면 고용24 원문 페이지로 이동합니다.</span>
+</div>
+
+{% if page_obj.object_list %}
+<div class="d-flex flex-column gap-3">
+  {% for posting in page_obj %}
+  <a class="text-decoration-none text-reset" href="{{ posting.source_url }}" target="_blank" rel="noopener noreferrer">
+    <div class="card border-0 shadow-sm"><div class="card-body">
+      <div class="mb-1"><span class="badge text-bg-secondary">고용24</span> <span class="text-secondary small">{{ posting.fetched_at|date:'Y-m-d' }} 수집</span></div>
+      <h3 class="h5 mb-2">{{ posting.company_name }} · {{ posting.title }}</h3>
+      <div class="d-flex flex-wrap gap-3 text-secondary small">
+        <span>{{ posting.region_text|default:'지역 정보 없음' }}</span>
+        <span class="text-primary fw-bold">{{ posting.pay_text|default:'급여 협의' }}</span>
+        <span>{{ posting.career_text|default:'경력무관' }}</span>
+        <span>{{ posting.period_text }}</span>
+      </div>
+    </div></div>
+  </a>
+  {% endfor %}
+</div>
+<div class="mt-4">{% include 'analytics/_pagination.html' %}</div>
+{% else %}
+<div class="empty-state">조건에 맞는 고용24 일자리 공고가 없습니다.</div>
+{% endif %}
+{% endblock %}

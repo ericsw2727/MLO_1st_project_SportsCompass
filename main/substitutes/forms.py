@@ -28,9 +28,9 @@ class ManagerVerifyForm(forms.Form):
     institution_name = forms.CharField(label='기관명', max_length=200)
     business_reg_no = forms.CharField(label='사업자등록번호', max_length=20, required=False, help_text='선택 입력입니다.')
     phone = forms.CharField(label='담당자 휴대폰 번호', max_length=20)
-    verification_code = forms.CharField(
-        label='인증번호', max_length=10,
-        help_text='PASS 인증 연동 전까지는 테스트용으로 임의의 숫자를 입력하세요.',
+    password = forms.CharField(
+        label='비밀번호', widget=forms.PasswordInput, min_length=4, max_length=20,
+        help_text='같은 번호로 다시 공고를 등록할 때 필요하니 잊지 마세요.',
     )
 
     def __init__(self, *args, **kwargs):
@@ -70,11 +70,60 @@ class PostingForm(forms.ModelForm):
         return self.cleaned_data['region'].strip()
 
 
+class PostingEditForm(forms.ModelForm):
+    phone = forms.CharField(label='담당자 휴대폰 번호', max_length=20, help_text='공고 등록 시 입력했던 번호를 입력해 주세요.')
+    password = forms.CharField(label='비밀번호', widget=forms.PasswordInput)
+    required_certifications = forms.MultipleChoiceField(
+        label='필요 자격증', choices=CERTIFICATION_CHOICES, widget=forms.CheckboxSelectMultiple,
+    )
+
+    class Meta:
+        model = Posting
+        fields = [
+            'status', 'sport', 'work_date', 'start_time', 'end_time', 'region', 'address',
+            'required_certifications', 'pay_amount', 'pay_unit', 'headcount', 'description',
+        ]
+        labels = {
+            'status': '모집 상태', 'sport': '종목', 'work_date': '날짜', 'start_time': '시작 시간',
+            'end_time': '종료 시간', 'region': '지역', 'address': '장소(주소)', 'pay_amount': '시급/페이',
+            'pay_unit': '단위', 'headcount': '모집 인원', 'description': '상세 요청사항',
+        }
+        widgets = {
+            'work_date': forms.DateInput(attrs={'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time'}),
+            'description': forms.Textarea(attrs={'rows': 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['sport'].queryset = CanonicalSport.objects.filter(is_active=True).order_by('name')
+        self.order_fields([
+            'phone', 'password', 'status', 'sport', 'work_date', 'start_time', 'end_time',
+            'region', 'address', 'required_certifications', 'pay_amount', 'pay_unit',
+            'headcount', 'description',
+        ])
+        _apply_widget_classes(self.fields)
+
+    def clean_region(self):
+        return self.cleaned_data['region'].strip()
+
+
+class PostingDeleteForm(forms.Form):
+    phone = forms.CharField(label='담당자 휴대폰 번호', max_length=20, help_text='공고 등록 시 입력했던 번호를 입력해 주세요.')
+    password = forms.CharField(label='비밀번호', widget=forms.PasswordInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _apply_widget_classes(self.fields)
+
+
 class ApplyForm(forms.Form):
     name = forms.CharField(label='이름', max_length=50)
-    phone = forms.CharField(
-        label='휴대폰 번호', max_length=20,
-        help_text='PASS 인증 연동 전까지는 테스트용으로 본인 번호를 입력하세요.',
+    phone = forms.CharField(label='휴대폰 번호', max_length=20)
+    password = forms.CharField(
+        label='비밀번호', widget=forms.PasswordInput, min_length=4, max_length=20,
+        help_text='같은 번호로 다시 신청할 때 본인 확인에 사용됩니다.',
     )
 
     def __init__(self, *args, **kwargs):
